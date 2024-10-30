@@ -1,0 +1,10 @@
+{
+  "name": "@oaly/vue-abstract",
+  "version": "1.0.0",
+  "license": "MIT",
+  "description": "Some vue components",
+  "exports": "./mod.ts",
+  "imports": {
+    "vue": "npm:vue@^3.5.12"
+  }
+}

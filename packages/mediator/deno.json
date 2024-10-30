@@ -1,0 +1,7 @@
+{
+  "name": "@oaly/mediator",
+  "version": "1.0.0",
+  "license": "MIT",
+  "description": "A lightweight pub/sub",
+  "exports": "./mod.ts"
+}
