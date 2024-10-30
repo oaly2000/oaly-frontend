@@ -6,6 +6,7 @@
     "lineWidth": 140,
     "indentWidth": 2
   },
+  "lock": true,
   "imports": {
     "@std/assert": "jsr:@std/assert@1"
   },

@@ -17,7 +17,7 @@
  */
 
 import { computed, defineComponent, h, onUnmounted, provide, shallowRef, watchEffect } from "vue";
-import type { Component, InjectionKey, PropType, Ref } from "vue";
+import type { FunctionalComponent, InjectionKey, PropType, Ref } from "vue";
 import { createSender, type Sender } from "@oaly/mediator";
 
 /**
@@ -32,7 +32,7 @@ type RemoteValuesProps = { loader: () => Promise<any> };
  *
  * see {@link LoaderInjectKey}
  */
-export const RemoteValues: Component<RemoteValuesProps> = defineComponent({
+export const RemoteValues = defineComponent({
   name: "RemoteValues",
   props: {
     loader: {
@@ -52,7 +52,7 @@ export const RemoteValues: Component<RemoteValuesProps> = defineComponent({
 
     return () => ctx.slots.default?.({ values: valuesRef.value });
   },
-});
+}) as any as FunctionalComponent<RemoteValuesProps>;
 
 type QueryableRemoteValuesPayload =
   | ["query", any]
@@ -79,7 +79,7 @@ type QueryableRemoteValuesProps = {
 /**
  * see {@link useQueryableRemoteValues}
  */
-export const QueryableRemoteValues: Component<QueryableRemoteValuesProps> = defineComponent({
+export const QueryableRemoteValues = defineComponent({
   name: "QueryableRemoteValues",
   props: {
     loader: {
@@ -98,7 +98,7 @@ export const QueryableRemoteValues: Component<QueryableRemoteValuesProps> = defi
     const loaderRef = computed(() => () => props.loader(queryRef.value, paginationRef.value));
 
     onUnmounted(
-      props.sender.subscribe((payload) => {
+      props.sender.subscribe((payload: QueryableRemoteValuesPayload) => {
         if (payload[0] === "pagination") {
           paginationRef.value = payload[1];
         } else if (payload[0] === "query") {
@@ -110,4 +110,4 @@ export const QueryableRemoteValues: Component<QueryableRemoteValuesProps> = defi
 
     return () => h(RemoteValues, { loader: loaderRef.value }, ctx.slots);
   },
-});
+}) as any as FunctionalComponent<QueryableRemoteValuesProps>;
