@@ -1,6 +1,6 @@
 {
   "name": "@oaly/vue-abstract",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "MIT",
   "description": "Some vue components",
   "exports": "./mod.ts",

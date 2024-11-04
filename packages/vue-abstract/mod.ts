@@ -64,7 +64,7 @@ export const RemoteValues = defineComponent({
     },
   },
   setup(props, ctx) {
-    const valuesRef = shallowRef<any>();
+    const valuesRef = shallowRef<any>(null);
     const loader = computed(() => () => props.loader().then((v: any) => (valuesRef.value = v)));
 
     watchEffect(() => {
@@ -118,7 +118,7 @@ type QueryableRemoteValuesProps = {
  *   age: 18 + Math.floor(index / 4)
  * }));
  *
- * async (query: (typeof dataSource)[number], pagination) => {
+ * const loader = async (query: (typeof dataSource)[number], pagination) => {
  *   console.log("loading...", query, pagination);
  *
  *   const filtered = dataSource
@@ -179,7 +179,6 @@ export const QueryableRemoteValues = defineComponent({
         } else if (payload[0] === "query") {
           queryRef.value = payload[1];
         }
-        loaderRef.value();
       }),
     );
 
