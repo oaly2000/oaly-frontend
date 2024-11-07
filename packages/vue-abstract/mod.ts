@@ -7,7 +7,7 @@
  * @module
  */
 
-import { computed, defineComponent, h, inject, onUnmounted, provide, shallowRef, watchEffect } from "vue";
+import { computed, defineComponent, h, inject, onUnmounted, provide, shallowRef, watch } from "vue";
 import type { FunctionalComponent, InjectionKey, PropType, Ref } from "vue";
 import { createSender, type Sender } from "@oaly/mediator";
 
@@ -18,7 +18,17 @@ import { createSender, type Sender } from "@oaly/mediator";
  */
 export const LoaderInjectKey = Symbol("LoaderInjectKey") as InjectionKey<Ref<() => Promise<any>>>;
 
-type RemoteValuesProps = { loader: () => Promise<any> };
+type RemoteValuesProps = {
+  loader: () => Promise<any>;
+  /**
+   * 有时候我们不希望查询立即执行, 又或者查询的参数尚未完成初始化可能会导致错误的查询结果, 此时就可以将此参数设置为true跳过第一次查询.
+   *
+   * Sometimes we do not want the query to be executed immediately,
+   * or the query parameter may cause errors due to incomplete initialization,
+   * so this parameter can be set to true to skip the first query.
+   */
+  ignoreFirstLoader?: boolean;
+};
 
 /**
  * 该组件可以用来加载任意远程数据, 当数据未加载完成时, values为空.
@@ -62,14 +72,19 @@ export const RemoteValues = defineComponent({
       type: Function as PropType<() => Promise<any>>,
       required: true,
     },
+    ignoreFirstLoader: Boolean,
   },
   setup(props, ctx) {
     const valuesRef = shallowRef<any>(null);
     const loader = computed(() => () => props.loader().then((v: any) => (valuesRef.value = v)));
 
-    watchEffect(() => {
-      loader.value();
-    });
+    watch(
+      () => props.loader,
+      () => {
+        loader.value();
+      },
+      { immediate: !props.ignoreFirstLoader },
+    );
 
     provide(LoaderInjectKey, loader);
 
@@ -77,9 +92,7 @@ export const RemoteValues = defineComponent({
   },
 }) as any as FunctionalComponent<RemoteValuesProps>;
 
-type QueryableRemoteValuesPayload =
-  | ["query", any]
-  | ["pagination", { page: number; perPage: number }];
+type QueryableRemoteValuesPayload = ["query", any] | ["pagination", { page: number; perPage: number }];
 
 /**
  * 将返回值 sender 传递给 {@link QueryableRemoteValues}, 然后就可以通过 sender 发送查询条件和分页以刷新数据
@@ -97,6 +110,10 @@ type QueryableRemoteValuesProps = {
    * see {@link useQueryableRemoteValues}
    */
   sender: Sender<QueryableRemoteValuesPayload, void>;
+  /**
+   * see {@link RemoteValuesProps.ignoreFirstLoader}
+   */
+  manual?: boolean;
 };
 
 /**
@@ -165,12 +182,17 @@ export const QueryableRemoteValues = defineComponent({
       type: Object as PropType<Sender<QueryableRemoteValuesPayload, void>>,
       required: true,
     },
+    manual: Boolean,
   },
   setup(props, ctx) {
     const queryRef = shallowRef({});
     const paginationRef = shallowRef({});
 
-    const loaderRef = computed(() => () => props.loader(queryRef.value, paginationRef.value));
+    const loaderRef = shallowRef(() => props.loader(queryRef.value, paginationRef.value));
+
+    watch([queryRef, paginationRef], ([newQuery, newPagination]: any) => {
+      loaderRef.value = () => props.loader(newQuery, newPagination);
+    });
 
     onUnmounted(
       props.sender.subscribe((payload: QueryableRemoteValuesPayload) => {
@@ -182,7 +204,7 @@ export const QueryableRemoteValues = defineComponent({
       }),
     );
 
-    return () => h(RemoteValues, { loader: loaderRef.value }, ctx.slots);
+    return () => h(RemoteValues, { loader: loaderRef.value, ignoreFirstLoader: props.manual }, ctx.slots);
   },
 }) as any as FunctionalComponent<QueryableRemoteValuesProps>;
 
